@@ -5,8 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{{ $title ?? __('app.brand') }}</title>
-    <link rel="stylesheet" href="{{ asset('css/industry.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/sanduq.css') }}">
+    @use('App\Support\Asset')
+    <link rel="stylesheet" href="{{ Asset::versioned('css/industry.css') }}">
+    <link rel="stylesheet" href="{{ Asset::versioned('css/sanduq.css') }}">
     <script>
         try {
             var t = localStorage.getItem('sq-theme') ||
@@ -36,6 +37,6 @@
         </div>
     </div>
 </div>
-<script src="{{ asset('js/sanduq.js') }}" defer></script>
+<script src="{{ Asset::versioned('js/sanduq.js') }}" defer></script>
 </body>
 </html>

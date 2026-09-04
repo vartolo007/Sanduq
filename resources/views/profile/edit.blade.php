@@ -80,21 +80,37 @@
         <x-card style="border-color:color-mix(in srgb,var(--sq-out) 45%,transparent);">
             <h3 style="margin:0;font-family:var(--font-heading);font-size:19px;color:var(--sq-out);">{{ __('app.account') }}</h3>
             <p class="sq-mute" style="margin:0;font-size:13px;">{{ __('app.account_copy') }}</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="btn btn-secondary sq-tap" style="min-height:44px;">
-                        <x-icon name="logout" size="18" /> {{ __('app.logout') }}
-                    </button>
-                </form>
-                <form id="del-account" method="POST" action="{{ route('profile.destroy') }}">
-                    @csrf @method('DELETE')
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-secondary sq-tap" style="min-height:44px;">
+                    <x-icon name="logout" size="18" /> {{ __('app.logout') }}
+                </button>
+            </form>
+
+            <div style="height:1px;background:var(--color-divider);"></div>
+
+            {{-- حذف الحساب لا رجعة فيه، فنطلب كلمة المرور قبله حتى لا يكفي
+                 الوصول إلى جهاز مفتوح لمحو كل السجلات. --}}
+            <form id="del-account" method="POST" action="{{ route('profile.destroy') }}"
+                  style="display:flex;flex-direction:column;gap:10px;">
+                @csrf @method('DELETE')
+
+                <p class="sq-mute" style="margin:0;font-size:13px;">{{ __('app.delete_account_hint') }}</p>
+
+                <div class="field" style="max-width:320px;">
+                    <label for="del-pass">{{ __('app.confirm_password') }}</label>
+                    <input id="del-pass" class="input" type="password" name="password"
+                           autocomplete="current-password" style="min-height:44px;">
+                    @error('password')<div class="sq-field-error"><x-icon name="alert" size="14" /> {{ $message }}</div>@enderror
+                </div>
+
+                <div>
                     <button type="button" class="btn btn-secondary sq-tap" style="min-height:44px;color:var(--sq-out);"
                             onclick="sqConfirmDelete('del-account')">
                         <x-icon name="trash" size="18" /> {{ __('app.delete_account') }}
                     </button>
-                </form>
-            </div>
+                </div>
+            </form>
         </x-card>
     </div>
 </x-layouts.app>

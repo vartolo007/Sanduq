@@ -6,11 +6,13 @@
             <p class="sq-mute" style="margin:0;font-size:13px;">{{ __('app.reset_sub') }}</p>
         </div>
 
+        {{-- رسالة "أرسلنا الرمز" تصل من PasswordOtpController بعد إعادة التوجيه --}}
+        @if (session('status'))
+            <x-alert tone="ok" icon="check">{{ session('status') }}</x-alert>
+        @endif
+
         <form method="POST" action="{{ route('password.store') }}" style="display:flex;flex-direction:column;gap:16px;">
             @csrf
-
-            {{-- الرمز يأتي من الرابط المُرسل بالبريد ويعود مع النموذج ليتحقق منه الخادم --}}
-            <input type="hidden" name="token" value="{{ $token }}">
 
             <div class="field">
                 <label for="email">{{ __('app.email') }}</label>
@@ -20,9 +22,24 @@
             </div>
 
             <div class="field">
+                <label for="code">{{ __('app.otp_code') }}</label>
+                {{-- dir=ltr يمنع عكس ترتيب الأرقام في الواجهة العربية.
+                     inputmode=numeric يفتح لوحة الأرقام على الجوال. --}}
+                <input id="code" class="input sq-num" type="text" name="code" value="{{ old('code') }}"
+                       dir="ltr" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+                       maxlength="{{ \App\Support\PasswordOtp::LENGTH }}" required autofocus
+                       placeholder="000000"
+                       style="min-height:52px;font-size:26px;text-align:center;letter-spacing:10px;">
+                @error('code')<div class="sq-field-error"><x-icon name="alert" size="14" /> {{ $message }}</div>@enderror
+                <div class="sq-mute" style="font-size:12px;">
+                    {{ __('app.otp_hint', ['minutes' => \App\Support\PasswordOtp::EXPIRY_MINUTES]) }}
+                </div>
+            </div>
+
+            <div class="field">
                 <label for="password">{{ __('app.new_password') }}</label>
                 <input id="password" class="input" type="password" name="password"
-                       autocomplete="new-password" required autofocus style="min-height:46px;font-size:15px;">
+                       autocomplete="new-password" required style="min-height:46px;font-size:15px;">
                 @error('password')<div class="sq-field-error"><x-icon name="alert" size="14" /> {{ $message }}</div>@enderror
             </div>
 
@@ -37,7 +54,8 @@
             </button>
         </form>
 
-        <div class="sq-mute" style="text-align:center;font-size:13px;">
+        <div class="sq-mute" style="text-align:center;font-size:13px;display:flex;flex-direction:column;gap:6px;">
+            <a href="{{ route('password.request') }}">{{ __('app.resend_code') }}</a>
             <a href="{{ route('login') }}">{{ __('app.back_to_login') }}</a>
         </div>
     </div>

@@ -1,4 +1,4 @@
-<x-nav-links />
+@php $items = \App\Support\Navigation::items(); @endphp
 <aside class="sq-side">
     <a href="{{ route('dashboard') }}" class="sq-brand" style="text-decoration:none;color:inherit;">
         <span class="sq-mark">ص</span>

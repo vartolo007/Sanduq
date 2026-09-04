@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,10 @@ class RegisteredUserController extends Controller
         // لاحظ أننا لا نستدعي Hash::make هنا: الخاصية 'password' => 'hashed'
         // في نموذج User تتكفّل بالتشفير تلقائيًا عند الحفظ.
         $user = User::create($request->validated());
+
+        // يبدأ الحساب بتصنيفات جاهزة بدل صفحة فارغة تُجبر المستخدم
+        // على إنشاء تصنيف قبل أن يسجّل أول عملية.
+        Category::createDefaultsFor($user);
 
         Auth::login($user);
 

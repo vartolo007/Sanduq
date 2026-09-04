@@ -102,7 +102,17 @@ a:hover{ color:var(--color-accent); }
 .sq-bar{ width:38%; min-height:3px; }
 .sq-bar-in{ background:var(--sq-in); } .sq-bar-out{ background:var(--sq-out); }
 .sq-axis{ display:flex; gap:8px; }
-.sq-axis > div{ flex:1; text-align:center; font-size:11px; color:color-mix(in srgb,var(--color-text) 55%,transparent); }
+/* min-width:0 ضروري: بدونه لا ينكمش العنوان تحت عرض نصّه، فيتمدد الصف أفقيًا
+   ويخرج عن الشاشة عندما يكثر عدد السلال (تقسيم يومي مثلًا). */
+/* min-width:0 يمنع تمدد الصف: بدونه يتحدد عرض الخانة بعرض نصّها فيخرج المحور
+   عن الشاشة عند كثرة السلال. و overflow:visible يسمح للعنوان بأن يمتد فوق
+   الخانات المجاورة — وهي فارغة أصلًا لأننا نطبع عنوانًا كل عدة أعمدة —
+   فيُقرأ كاملًا دون أن يؤثر على التخطيط. */
+.sq-axis > div{ flex:1; min-width:0; text-align:center; font-size:11px; white-space:nowrap;
+  overflow:visible; color:color-mix(in srgb,var(--color-text) 55%,transparent); }
+/* الجوال أضيق من أن يتسع لكل العناوين، فنخفي البدائل منها ونُبقي الخانة قائمة
+   (visibility لا display) حتى تبقى الأعمدة محاذية. تعود كاملة على 680px. */
+.sq-axis > .sq-axis-dense{ visibility:hidden; }
 .sq-legend{ display:flex; gap:14px; font-size:12px; }
 .sq-legend span{ display:flex; align-items:center; gap:6px; }
 .sq-swatch{ width:10px; height:10px; }
@@ -148,10 +158,29 @@ a:hover{ color:var(--color-accent); }
 .sq-alert-warn{ border-color:var(--sq-warn); background:color-mix(in srgb,var(--sq-warn) 12%,transparent); }
 .sq-alert-ok{ border-color:var(--sq-in); background:color-mix(in srgb,var(--sq-in) 10%,transparent); }
 
+/* النقر المزدوج على نص داخل زر أو تبويب كان يحدّد الكلمة ويفتح قائمة النسخ
+   والترجمة في متصفح الجوال. نمنع التحديد على عناصر التحكم والتنقّل فقط،
+   ويبقى ممكنًا على المحتوى (المبالغ والملاحظات وأسماء التصنيفات) حتى يستطيع
+   المستخدم نسخها. */
+.btn, .sq-tab, .sq-chip, .sq-seg-opt, .sq-type-opt, .sq-nav-item, .sq-fab,
+.sq-label, .sq-kicker, .sq-axis, .sq-legend, .sq-mark, .sq-topbar, .sq-brand,
+.sq-header, .sq-side, .sq-bottom, label {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+/* الخاصية تُورَّث، وبعض الحاويات أعلاه تحتوي حقول إدخال (حقل البحث في الهيدر
+   مثلًا). نعيد التحديد إلى الحقول صراحةً وإلا تعذّر على المستخدم تحديد ما كتبه. */
+input, textarea, select {
+  -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+}
+
 /* sheet: bottom sheet on mobile, centred dialog on desktop */
 .sq-sheet{ position:fixed; inset-inline:0; bottom:0; z-index:60;
   background:color-mix(in srgb,var(--color-neutral-900) 55%,transparent); animation:sqFade .16s ease-out; }
 .sq-sheet[hidden]{ display:none; }
+/* .dialog-backdrop تضبط display:grid في industry.css، وهي قاعدة مؤلِّف تتغلّب
+   على [hidden] الافتراضية في المتصفح، فتظهر نافذة التأكيد عند تحميل الصفحة.
+   هذا السطر يعيد إخفاءها. */
+.dialog-backdrop[hidden]{ display:none; }
 .sq-sheet-panel{ width:100%; max-height:92vh; overflow-y:auto; background:var(--color-bg);
   border:1px solid var(--color-divider); animation:sqUp .22s cubic-bezier(.2,.8,.2,1); }
 .sq-sheet-head{ display:flex; align-items:center; gap:12px; padding:16px 18px;
@@ -178,6 +207,7 @@ a:hover{ color:var(--color-accent); }
   .sq-topbar,.sq-bottom,.sq-fab{ display:none; }
   .sq-only-mobile{ display:none !important; }
   .sq-only-desk{ display:block; }
+  .sq-axis > .sq-axis-dense{ visibility:visible; }
   .sq-page{ padding:26px; }
   .sq-g2,.sq-g4{ grid-template-columns:1fr 1fr; }
   .sq-g3{ grid-template-columns:1fr 1fr 1fr; }

@@ -18,6 +18,7 @@ return [
     'email' => 'صيغة :attribute غير صحيحة.',
     'unique' => 'قيمة :attribute مستخدمة من قبل.',
     'confirmed' => 'تأكيد :attribute غير متطابق.',
+    'current_password' => 'كلمة المرور غير صحيحة.',
     'numeric' => 'يجب أن يكون :attribute رقمًا.',
     'date' => 'يجب أن يكون :attribute تاريخًا صحيحًا.',
     'in' => 'قيمة :attribute المختارة غير صالحة.',

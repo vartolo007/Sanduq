@@ -5,41 +5,24 @@
             <p class="sq-mute" style="margin:0;font-size:13px;">{{ __('app.reports_sub') }}</p>
         </div>
 
-        <x-card pad="18px">
-            <div class="sq-kicker">{{ __('app.filters') }}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                @foreach (['month' => __('app.range_month'), '6m' => __('app.range_6m'), 'all' => __('app.range_all'), 'custom' => __('app.range_custom')] as $key => $label)
-                    <a href="{{ route('reports.index', array_merge(request()->except('page'), ['range' => $key])) }}"
-                       class="sq-chip sq-tap @if(request('range', 'month') === $key) is-on @endif">{{ $label }}</a>
+        {{-- نفس مكوّن الفلترة المستخدم في لوحة التحكم، ويُضاف إليه هنا فلتر
+             التصنيف الخاص بالتقارير — البند 3.3.3 --}}
+        <x-period-filter :period="$period" route-name="reports.index">
+            <form method="GET" action="{{ route('reports.index') }}" class="field" style="max-width:340px;">
+                {{-- نحمل الفترة المختارة معنا حتى لا يُعيد تبديل التصنيف ضبطها --}}
+                @foreach ($period->queryParams() as $name => $value)
+                    <input type="hidden" name="{{ $name }}" value="{{ $value }}">
                 @endforeach
-            </div>
 
-            <form method="GET" action="{{ route('reports.index') }}" class="sq-stack" style="--sq-gap:12px;">
-                <input type="hidden" name="range" value="{{ request('range', 'month') }}">
-                @if (request('range') === 'custom')
-                    <div class="sq-grid sq-g2" style="gap:12px;">
-                        <div class="field">
-                            <label for="from">{{ __('app.from') }}</label>
-                            <input id="from" class="input" type="date" name="from" value="{{ request('from') }}" style="min-height:44px;">
-                        </div>
-                        <div class="field">
-                            <label for="to">{{ __('app.to') }}</label>
-                            <input id="to" class="input" type="date" name="to" value="{{ request('to') }}" style="min-height:44px;">
-                        </div>
-                    </div>
-                @endif
-                <div class="field" style="max-width:340px;">
-                    <label for="category">{{ __('app.category') }}</label>
-                    <select id="category" class="input" name="category_id" style="min-height:44px;" onchange="this.form.submit()">
-                        <option value="">{{ __('app.all') }}</option>
-                        @foreach ($categories as $cat)
-                            <option value="{{ $cat->id }}" @selected(request('category_id') == $cat->id)>{{ $cat->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="sq-only-desk"><button type="submit" class="btn btn-secondary sq-tap" style="min-height:42px;">{{ __('app.apply') }}</button></div>
+                <label for="category">{{ __('app.category') }}</label>
+                <select id="category" class="input" name="category_id" style="min-height:44px;" onchange="this.form.submit()">
+                    <option value="">{{ __('app.all') }}</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat->id }}" @selected($selectedCategory?->id === $cat->id)>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
             </form>
-        </x-card>
+        </x-period-filter>
 
         <div class="sq-grid sq-g3">
             <x-card pad="18px">
@@ -58,7 +41,9 @@
 
         <x-card>
             <div class="sq-between" style="align-items:center;">
-                <h3 style="margin:0;font-family:var(--font-heading);font-size:19px;">{{ __('app.monthly_chart') }}</h3>
+                <h3 style="margin:0;font-family:var(--font-heading);font-size:19px;">
+                    {{ __('app.in_out_period', ['period' => $period->label()]) }}
+                </h3>
                 <x-legend />
             </div>
             <x-chart-bars :series="$series" />

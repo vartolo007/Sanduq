@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PasswordOtpController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,12 +34,13 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    // استعادة كلمة المرور: الخطوة الأولى — طلب رابط إعادة التعيين
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    // استعادة كلمة المرور: الخطوة الأولى — إرسال رمز من ٦ خانات على البريد
+    Route::get('forgot-password', [PasswordOtpController::class, 'create'])->name('password.request');
+    Route::post('forgot-password', [PasswordOtpController::class, 'store'])->name('password.email');
 
-    // استعادة كلمة المرور: الخطوة الثانية — تعيين كلمة جديدة عبر الرابط المُرسل
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    // استعادة كلمة المرور: الخطوة الثانية — إدخال الرمز وكلمة المرور الجديدة.
+    // لا معرّف في الرابط: الرمز يكتبه المستخدم في النموذج.
+    Route::get('reset-password', [NewPasswordController::class, 'create'])->name('password.reset');
     Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });
 

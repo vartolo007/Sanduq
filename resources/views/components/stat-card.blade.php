@@ -1,4 +1,4 @@
-@props(['label', 'value', 'meta' => null, 'tone' => 'income'])
+@props(['label', 'amount', 'meta' => null, 'tone' => 'income'])
 @php $color = $tone === 'income' ? 'var(--sq-in)' : 'var(--sq-out)'; @endphp
 <div class="card blueprint sq-lift" style="padding:18px;gap:10px;">
     <x-corners />
@@ -8,6 +8,7 @@
         </span>
         <span class="sq-label">{{ $label }}</span>
     </div>
-    <div class="sq-stat-num" style="color:{{ $color }};">{{ $value }}</div>
+    {{-- المبلغ يُمرَّر رقمًا ويُرسَم هنا، بدل تمرير HTML جاهز يهرّبه Blade عند الإخراج --}}
+    <div class="sq-stat-num" style="color:{{ $color }};"><x-money :amount="$amount" /></div>
     @if ($meta)<div class="sq-mute" style="font-size:12px;">{{ $meta }}</div>@endif
 </div>

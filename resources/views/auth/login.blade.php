@@ -6,6 +6,12 @@
             <p class="sq-mute" style="margin:0;font-size:13px;">{{ __('app.auth_sub_login') }}</p>
         </div>
 
+        {{-- رسائل تصل إلى هذه الصفحة بعد إجراء تم في مكان آخر: تغيير كلمة
+             المرور بنجاح، أو حذف الحساب. بدون هذا القسم تضيع الرسالة صامتة. --}}
+        @if (session('status'))
+            <x-alert tone="ok" icon="check">{{ session('status') }}</x-alert>
+        @endif
+
         @if ($errors->any())
             <x-alert tone="error">{{ __('app.err_bad_login') }}</x-alert>
         @endif

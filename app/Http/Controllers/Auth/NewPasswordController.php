@@ -3,34 +3,30 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Support\PasswordOtp;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\View\View;
 
 /**
- * الخطوة الثانية من استعادة كلمة المرور: تعيين كلمة جديدة عبر الرابط المُرسل.
- *
- * ملاحظة على الأسماء: Password (الواجهة) تدير رموز الاستعادة، بينما
- * PasswordRule (قاعدة التحقق) تفحص قوة كلمة المرور. الاسمان متشابهان في
- * Laravel لذلك أعطينا الثانية اسمًا مستعارًا في سطر use أعلاه.
+ * الخطوة الثانية من استعادة كلمة المرور: إدخال الرمز وكلمة المرور الجديدة.
  */
 class NewPasswordController extends Controller
 {
     /**
-     * عرض نموذج كلمة المرور الجديدة.
+     * عرض نموذج الرمز وكلمة المرور الجديدة.
      *
-     * الرمز يأتي من الرابط، والبريد من الـ query string، ونمرّرهما إلى النموذج
-     * ليعودا معه كحقلين مخفيين عند الإرسال.
+     * البريد يأتي من الجلسة (وضعه PasswordOtpController) ليُملأ الحقل مسبقًا،
+     * ويبقى قابلًا للتعديل إن فتح المستخدم الصفحة من متصفّح آخر.
      */
-    public function create(Request $request, string $token): View
+    public function create(Request $request): View
     {
         return view('auth.reset-password', [
-            'token' => $token,
-            'email' => $request->string('email')->toString(),
+            'email' => $request->session()->get('otp_email', ''),
         ]);
     }
 
@@ -40,33 +36,50 @@ class NewPasswordController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'token' => ['required'],
             'email' => ['required', 'string', 'email'],
+            // digits تضمن أرقامًا فقط بطول محدّد، فلا يمر رمز بأحرف أو بطول آخر.
+            'code' => ['required', 'string', 'digits:'.PasswordOtp::LENGTH],
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
-        // reset تتحقق من صلاحية الرمز ومن مطابقته للبريد، ثم تنادي دالتنا
-        // لتغيير كلمة المرور. إن كان الرمز خاطئًا أو منتهيًا لا تُنفَّذ الدالة.
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user) use ($request) {
-                $user->forceFill([
-                    // التشفير يتم تلقائيًا بفضل 'password' => 'hashed' في نموذج User
-                    'password' => $request->string('password')->toString(),
-                    // إبطال "تذكّرني" على كل الأجهزة التي كانت مسجّلة الدخول
-                    'remember_token' => Str::random(60),
-                ])->save();
+        $email = mb_strtolower($request->string('email')->trim()->toString());
 
-                event(new PasswordReset($user));
-            }
-        );
-
-        if ($status === Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+        // الفحص الأهم في هذا التدفق: بدونه يمكن تجربة المليون احتمال آليًا.
+        if (PasswordOtp::tooManyAttempts($email)) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors([
+                    'code' => __('app.otp_too_many', [
+                        'minutes' => (int) ceil(PasswordOtp::secondsUntilRetry($email) / 60),
+                    ]),
+                ]);
         }
 
-        return back()
-            ->withInput($request->only('email'))
-            ->withErrors(['email' => __($status)]);
+        $user = User::where('email', $email)->first();
+
+        // رسالة واحدة لكل أسباب الفشل (رمز خاطئ، منتهٍ، أو بريد غير مسجّل)
+        // حتى لا تميّز الردودُ الحالاتِ عن بعضها.
+        if ($user === null || ! PasswordOtp::verify($email, $request->string('code')->toString())) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['code' => __('app.otp_invalid')]);
+        }
+
+        $user->forceFill([
+            // التشفير يتم تلقائيًا بفضل 'password' => 'hashed' في نموذج User
+            'password' => $request->string('password')->toString(),
+            // إبطال "تذكّرني" على كل الأجهزة التي كانت مسجّلة الدخول
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        // الرمز صالح لمرة واحدة: نُبطله فور نجاح التغيير.
+        PasswordOtp::clear($email);
+        $request->session()->forget('otp_email');
+
+        event(new PasswordReset($user));
+
+        return redirect()
+            ->route('login')
+            ->with('status', __('app.password_reset_done'));
     }
 }

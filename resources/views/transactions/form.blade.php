@@ -1,6 +1,10 @@
 @php
     $editing = isset($transaction);
-    $type = old('type', $editing ? $transaction->type : 'expense');
+
+    // ترتيب المصادر: ما أُدخل وفشل التحقق (old) ← الحركة عند التعديل ←
+    // ما عاد به المستخدم من صفحة إضافة تصنيف (request) ← القيمة الافتراضية.
+    $type = old('type', $editing ? $transaction->type : request('type', 'expense'));
+    $selectedCategoryId = (int) old('category_id', $editing ? $transaction->category_id : request('category_id', 0));
 @endphp
 <x-layouts.app :title="$editing ? __('app.edit_tx') : __('app.add_tx')">
     <div style="max-width:560px;">
@@ -42,7 +46,7 @@
                     <div class="sq-amount @error('amount') has-error @enderror">
                         <span class="sq-num sq-mute" style="font-size:18px;flex:none;">{{ __('app.currency_short') }}</span>
                         <input type="text" name="amount" inputmode="decimal" placeholder="0.00"
-                               value="{{ old('amount', $editing ? $transaction->amount : '') }}"
+                               value="{{ old('amount', $editing ? $transaction->amount : request('amount', '')) }}"
                                aria-label="{{ __('app.amount') }}" required>
                     </div>
                     @error('amount')<div class="sq-field-error"><x-icon name="alert" size="14" /> {{ $message }}</div>@enderror
@@ -50,15 +54,24 @@
 
                 <div class="field">
                     <label for="sq-category">{{ __('app.category') }}</label>
-                    <select id="sq-category" class="input" name="category_id" required style="min-height:48px;font-size:15px;">
-                        <option value="">{{ __('app.choose') }}</option>
+                    <select id="sq-category" class="input" name="category_id" required
+                            data-new-url="{{ route('categories.index') }}"
+                            onchange="sqCategoryChanged(this)" style="min-height:48px;font-size:15px;">
+
+                        {{-- hidden تخفيه من القائمة المنسدلة، و disabled تمنع اختياره،
+                             لكنه يبقى النص الظاهر في الحقل المغلق كعنوان للحقل. --}}
+                        <option value="" disabled hidden @selected($selectedCategoryId === 0)>{{ __('app.choose') }}</option>
+
                         @foreach ($categories as $cat)
                             <option value="{{ $cat->id }}" data-type="{{ $cat->type }}"
                                     @if($cat->type !== $type) hidden @endif
-                                    @selected(old('category_id', $editing ? $transaction->category_id : null) === $cat->id)>
+                                    @selected($selectedCategoryId === $cat->id)>
                                 {{ $cat->name }}
                             </option>
                         @endforeach
+
+                        {{-- بلا data-type، فلا يخفيه sqSyncCategories عند تبديل النوع --}}
+                        <option value="__new__">+ {{ __('app.new_category') }}</option>
                     </select>
                     @error('category_id')<div class="sq-field-error"><x-icon name="alert" size="14" /> {{ $message }}</div>@enderror
                 </div>
@@ -66,13 +79,13 @@
                 <div class="field">
                     <label for="sq-date">{{ __('app.date') }}</label>
                     <input id="sq-date" class="input" type="date" name="date" required style="min-height:48px;font-size:15px;"
-                           value="{{ old('date', $editing ? $transaction->date->format('Y-m-d') : now()->format('Y-m-d')) }}">
+                           value="{{ old('date', $editing ? $transaction->date->format('Y-m-d') : request('date', now()->format('Y-m-d'))) }}">
                 </div>
 
                 <div class="field">
                     <label for="sq-note">{{ __('app.note') }}</label>
                     <textarea id="sq-note" class="input" name="note" rows="3" placeholder="{{ __('app.note_ph') }}"
-                              style="font-size:15px;">{{ old('note', $editing ? $transaction->note : '') }}</textarea>
+                              style="font-size:15px;">{{ old('note', $editing ? $transaction->note : request('note', '')) }}</textarea>
                 </div>
             </div>
 

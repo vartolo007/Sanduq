@@ -42,6 +42,42 @@
     open(dlg);
   };
 
+  /* categories: one sheet serves both adding and editing.
+     sqNewCategory resets it to a blank POST; sqEditCategory fills it from the
+     card's data-* attributes and switches it to a PUT on that category. */
+  function catForm() { return document.getElementById('sq-cat-form'); }
+
+  window.sqNewCategory = function () {
+    var sheet = document.getElementById('sq-cat-sheet');
+    var form = catForm();
+    if (!form) return;
+    form.action = form.dataset.storeUrl;
+    form.querySelector('#sq-cat-method').value = '';
+    form.querySelector('[name="editing_id"]').value = '';
+    form.querySelector('[name="name_ar"]').value = '';
+    form.querySelector('[name="name_en"]').value = '';
+    var inc = form.querySelector('input[name="type"][value="income"]');
+    if (inc) inc.checked = true;
+    document.getElementById('sq-cat-title').textContent = sheet.dataset.newLabel;
+    open(sheet);
+  };
+
+  window.sqEditCategory = function (btn) {
+    var sheet = document.getElementById('sq-cat-sheet');
+    var form = catForm();
+    if (!form) return;
+    var d = btn.dataset;
+    form.action = d.updateUrl;
+    form.querySelector('#sq-cat-method').value = 'PUT';
+    form.querySelector('[name="editing_id"]').value = d.categoryId;
+    form.querySelector('[name="name_ar"]').value = d.nameAr;
+    form.querySelector('[name="name_en"]').value = d.nameEn;
+    var t = form.querySelector('input[name="type"][value="' + d.type + '"]');
+    if (t) t.checked = true;
+    document.getElementById('sq-cat-title').textContent = sheet.dataset.editLabel;
+    open(sheet);
+  };
+
   /* toast auto-dismiss */
   document.querySelectorAll('.sq-toast-wrap').forEach(function (t) {
     setTimeout(function () { t.remove(); }, 3200);
@@ -61,5 +97,29 @@
       o.hidden = o.getAttribute('data-type') !== type;
       if (o.hidden && o.selected) { o.selected = false; }
     });
+  };
+
+  /* transaction form: the "+ new category" entry in the category list.
+     Leaves for the categories page and comes back with the new category chosen.
+     What the user already typed travels in the query string, so the form is
+     never wiped just because a category was missing. */
+  window.sqCategoryChanged = function (select) {
+    if (select.value !== '__new__') return;
+
+    var form = select.form;
+    var typed = new URLSearchParams();
+
+    ['type', 'amount', 'date', 'note'].forEach(function (name) {
+      var field = form.querySelector('[name="' + name + '"]');
+      if (field && field.value) { typed.set(name, field.value); }
+    });
+
+    var back = window.location.pathname + (typed.toString() ? '?' + typed.toString() : '');
+
+    // نمرّر نوع الحركة أيضًا لتفتح نافذة التصنيف على النوع نفسه، فلا يضطر
+    // المستخدم إلى تبديله يدويًا وهو قادم من حركة مصروف.
+    window.location.href = select.dataset.newUrl
+      + '?return=' + encodeURIComponent(back)
+      + '&type=' + encodeURIComponent(typed.get('type') || '');
   };
 })();

@@ -1,4 +1,4 @@
-<x-nav-links />
+@php $items = \App\Support\Navigation::items(); @endphp
 <nav class="sq-bottom" aria-label="{{ __('app.nav_label') }}">
     @foreach ($items as $item)
         @php $active = request()->routeIs($item['route']) || request()->routeIs(str_replace('.index', '.*', $item['route'])); @endphp

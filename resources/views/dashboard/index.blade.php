@@ -9,24 +9,29 @@
                 </h2>
                 <p class="sq-mute" style="margin:0;font-size:14px;">{{ __('app.dash_sub') }}</p>
             </div>
-            <a href="{{ route('reports.index') }}" class="btn btn-secondary sq-tap sq-only-desk" style="min-height:40px;">
+            <a href="{{ route('reports.index', $period->queryParams()) }}" class="btn btn-secondary sq-tap sq-only-desk" style="min-height:40px;">
                 <x-icon name="chart" size="17" /> {{ __('app.view_reports') }}
             </a>
         </div>
 
+        {{-- اختيار الفترة وحجم التقسيم — البند 3.3.2 --}}
+        <x-period-filter :period="$period" route-name="dashboard" />
+
         <div class="sq-grid sq-dash" style="align-items:start;">
             <div class="sq-stack" style="min-width:0;">
                 <x-balance-card
-                    :balance="view('components.money', ['amount' => $income - $expense])->render()"
+                    :amount="$income - $expense"
                     :income-share="$income + $expense > 0 ? round($income / ($income + $expense) * 100) : 50"
-                    :savings="$income > 0 ? round(($income - $expense) / $income * 100) . '%' : '0%'" />
+                    :savings="$income > 0 ? round(($income - $expense) / $income * 100) . '%' : '0%'"
+                    :period-label="$period->label()"
+                    :net-change="$netChange" />
 
                 <div class="sq-grid sq-g2">
                     <x-stat-card tone="income" :label="__('app.total_income')"
-                        :value="view('components.money', ['amount' => $income])->render()"
+                        :amount="$income"
                         :meta="$incomeCount . ' ' . __('app.tx_count')" />
                     <x-stat-card tone="expense" :label="__('app.total_expenses')"
-                        :value="view('components.money', ['amount' => $expense])->render()"
+                        :amount="$expense"
                         :meta="$expenseCount . ' ' . __('app.tx_count')" />
                 </div>
 
@@ -34,7 +39,10 @@
                     <div class="sq-between" style="align-items:center;">
                         <div>
                             <div class="sq-kicker">{{ __('app.overview') }}</div>
-                            <h3 style="margin:0;font-family:var(--font-heading);font-size:19px;">{{ __('app.six_months') }}</h3>
+                            {{-- العنوان يتبع الفترة المختارة بدل نص ثابت --}}
+                            <h3 style="margin:0;font-family:var(--font-heading);font-size:19px;">
+                                {{ __('app.in_out_period', ['period' => $period->label()]) }}
+                            </h3>
                         </div>
                         <x-legend />
                     </div>
@@ -45,7 +53,7 @@
             <div class="sq-stack" style="min-width:0;">
                 <x-card>
                     <h3 style="margin:0;font-family:var(--font-heading);font-size:19px;">{{ __('app.top_categories') }}</h3>
-                    @foreach ($topCategories as $cat)
+                    @forelse ($topCategories as $cat)
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;">
                                 <span class="sq-row" style="gap:8px;min-width:0;">
@@ -58,7 +66,9 @@
                             </div>
                             <div class="sq-track"><span style="width:{{ $cat['pct'] }}%;"></span></div>
                         </div>
-                    @endforeach
+                    @empty
+                        <p class="sq-mute" style="margin:0;font-size:14px;">{{ __('app.no_data') }}</p>
+                    @endforelse
                 </x-card>
             </div>
         </div>
