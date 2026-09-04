@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# إعدادات المحرّرات والأدوات المحلية
+.vscode/
+.idea/
+.fleet/
+.claude/
+*.code-workspace
