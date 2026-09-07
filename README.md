@@ -169,3 +169,69 @@ php artisan test
 غير موجود في المستودع عمدًا: يحتوي إعدادات خاصة بكل جهاز (كلمة مرور قاعدة
 البيانات، مفتاح التطبيق، بيانات البريد). انسخ `.env.example` واضبط قيمك
 كما في خطوات التشغيل أعلاه.
+
+---
+
+## الرفع على السيرفر
+
+### 1. الملفات
+
+```bash
+git clone https://github.com/vartolo007/Sanduq.git
+cd Sanduq
+composer install --no-dev --optimize-autoloader
+```
+
+`vendor/` غير مرفوع في المستودع، فلا بد من `composer install` على السيرفر.
+
+### 2. مجلد الجذر — مهم
+
+الوضع الصحيح أن يشير النطاق (أو الـ subdomain) إلى مجلد **`public` وحده**.
+
+إذا تعذّر ذلك على الاستضافة ووُضع المشروع كاملًا داخل مجلد يُفتح عبر
+`.../اسم-المجلد/public`، فإن كل ما بجانب `public` يصبح قابلًا للتنزيل من
+المتصفح — وفي مقدّمته `.env` بكلمة مرور قاعدة البيانات ومفتاح التطبيق.
+ملف `.htaccess` في جذر المشروع يغلق ذلك، لكنه لا يعمل إن كانت الاستضافة
+تتجاهل ملفات `.htaccess` (`AllowOverride None`).
+
+### 3. الإعدادات
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+ثم في `.env`:
+
+| المفتاح | القيمة على السيرفر |
+| --- | --- |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` — وإلا ظهرت تفاصيل الأخطاء والمسارات للزوار |
+| `APP_URL` | العنوان الكامل كما يُفتح في المتصفح |
+| `APP_TIMEZONE` | `Asia/Damascus` |
+| `DB_*` | بيانات قاعدة البيانات على السيرفر |
+| `MAIL_*` | إعدادات SMTP — إن بقيت `MAIL_MAILER=log` فلن تصل رموز استعادة كلمة المرور |
+
+### 4. قاعدة البيانات والصلاحيات
+
+```bash
+php artisan migrate --force
+chmod -R 775 storage bootstrap/cache
+```
+
+### 5. بعد كل تحديث
+
+```bash
+git pull
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan optimize:clear
+```
+
+`optimize:clear` ضروري: بدونه قد يبقى Laravel يقرأ إعدادات أو قوالب مخزّنة
+من نسخة سابقة.
+
+### متطلبات السيرفر
+
+PHP **8.2** فأعلى، وMySQL أو MariaDB، مع الامتدادات التي يطلبها Laravel 12
+(`pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`).

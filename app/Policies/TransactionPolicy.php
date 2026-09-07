@@ -11,17 +11,31 @@ use App\Models\User;
  * بدون هذه السياسة يستطيع أي مستخدم فتح /transactions/5/edit وتعديل حركة
  * لا تخصّه، لأن الرابط لا يحمل سوى رقم السجل.
  *
- * Laravel يكتشف هذا الملف تلقائيًا لأن اسمه يطابق النموذج Transaction.
+ * السياسة مسجّلة صراحةً في AppServiceProvider ولا نعتمد على الاكتشاف
+ * التلقائي بالاسم، لأنه يمرّ عبر مُحمِّل الأصناف وقد يفشل صامتًا على سيرفر
+ * لم يُحدَّث فيه autoload، فترفض كل العمليات بـ 403 دون سبب ظاهر.
  */
 class TransactionPolicy
 {
     public function update(User $user, Transaction $transaction): bool
     {
-        return $transaction->user_id === $user->id;
+        return $this->owns($user, $transaction);
     }
 
     public function delete(User $user, Transaction $transaction): bool
     {
-        return $transaction->user_id === $user->id;
+        return $this->owns($user, $transaction);
+    }
+
+    /**
+     * مقارنة المالك بعد توحيد النوع.
+     *
+     * التحويل إلى int مقصود: user_id ليس المفتاح الأساسي، فلا يحوّله Eloquent
+     * تلقائيًا كما يفعل مع id، ويعيده بعض إعدادات PDO/MySQL نصًا "3" بدل 3.
+     * عندها تفشل المقارنة الصارمة رغم أن السجل يخص المستخدم فعلًا.
+     */
+    private function owns(User $user, Transaction $transaction): bool
+    {
+        return (int) $transaction->user_id === (int) $user->id;
     }
 }

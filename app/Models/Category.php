@@ -27,6 +27,18 @@ class Category extends Model
     ];
 
     /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            // انظر التعليق نفسه في Transaction: المفاتيح الأجنبية لا يحوّلها
+            // Eloquent تلقائيًا، وقد تصل نصًا حسب إعداد PDO على السيرفر.
+            'user_id' => 'integer',
+        ];
+    }
+
+    /**
      * الاسم بلغة الواجهة الحالية.
      *
      * خاصية محسوبة لا عمود في الجدول: عند كتابة {{ $category->name }} في Blade

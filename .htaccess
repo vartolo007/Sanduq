@@ -1,0 +1,41 @@
+# حماية جذر المشروع عند رفعه داخل مجلد يخدمه الخادم مباشرة.
+#
+# الوضع الصحيح أن يشير النطاق إلى مجلد public وحده، فلا يكون هذا الملف
+# ضروريًا. لكن عند الرفع على استضافة مشتركة يوضع المشروع كاملًا داخل مجلد
+# ويُفتح عبر .../اسم-المجلد/public — عندها يصبح كل ما بجانب public قابلًا
+# للتنزيل من المتصفح، وفي مقدّمته .env الذي يحوي كلمة مرور قاعدة البيانات
+# ومفتاح التطبيق. هذا الملف يغلق ذلك.
+#
+# ملاحظة: إن كانت الاستضافة تتجاهل ملفات .htaccess (AllowOverride None)
+# فلن يكون له أثر، والحل الوحيد حينها توجيه النطاق إلى public.
+
+# منع فهرسة محتويات المجلدات
+Options -Indexes
+
+# منع الملفات المخفية كلها: ‎.env و ‎.env.backup و ‎.git وغيرها
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# منع الملفات الحسّاسة في الجذر
+<FilesMatch "\.(env|log|lock|sqlite|sh|bak|ini|yml|yaml)$|^(composer\.json|package\.json|artisan|phpunit\.xml|README\.md)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# منع الوصول إلى مجلدات الشيفرة والبيانات — كل شيء خارج public
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(app|bootstrap|config|database|lang|node_modules|resources|routes|storage|tests|vendor)(/|$) - [F,L]
+</IfModule>

@@ -12,11 +12,19 @@ class CategoryPolicy
 {
     public function update(User $user, Category $category): bool
     {
-        return $category->user_id === $user->id;
+        return $this->owns($user, $category);
     }
 
     public function delete(User $user, Category $category): bool
     {
-        return $category->user_id === $user->id;
+        return $this->owns($user, $category);
+    }
+
+    /**
+     * مقارنة المالك بعد توحيد النوع — للسبب نفسه الموضّح في TransactionPolicy.
+     */
+    private function owns(User $user, Category $category): bool
+    {
+        return (int) $category->user_id === (int) $user->id;
     }
 }

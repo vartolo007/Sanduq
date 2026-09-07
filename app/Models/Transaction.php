@@ -28,6 +28,12 @@ class Transaction extends Model
     protected function casts(): array
     {
         return [
+            // Eloquent يحوّل id تلقائيًا إلى int، لكنه لا يفعل ذلك مع المفاتيح
+            // الأجنبية. وبعض إعدادات PDO/MySQL تعيدها نصًا "3" بدل 3، فتفشل
+            // أي مقارنة صارمة معها. نثبّت النوع هنا فيصحّ في كل التطبيق.
+            'user_id' => 'integer',
+            'category_id' => 'integer',
+
             // يحوّل العمود إلى كائن Carbon، فتعمل $transaction->date->format(…)
             // و ->translatedFormat(…) في ملفات Blade مباشرة.
             'date' => 'date',
