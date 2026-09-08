@@ -55,7 +55,19 @@
         </form>
 
         <div class="sq-mute" style="text-align:center;font-size:13px;display:flex;flex-direction:column;gap:6px;">
-            <a href="{{ route('password.request') }}">{{ __('app.resend_code') }}</a>
+            {{-- إعادة الإرسال طلب POST لا رابطًا.
+                 كان هنا رابط إلى password.request، وهو مجرّد GET على صفحة إدخال
+                 البريد: يعيد المستخدم خطوة إلى الوراء دون أن يرسل رمزًا جديدًا،
+                 رغم أن نصّه يعده بذلك. الآن يستدعي password.email نفسه الذي أرسل
+                 الرمز أول مرة، فيطبّق حاجز الدقيقة ويعيدنا إلى هذه الصفحة.
+
+                 البريد من الجلسة لا من الحقل أعلاه: هو البريد الذي أُرسل إليه
+                 الرمز فعلًا، ولا نمرّر معه كلمة المرور المكتوبة في النموذج. --}}
+            <form method="POST" action="{{ route('password.email') }}" style="margin:0;">
+                @csrf
+                <input type="hidden" name="email" value="{{ old('email', $email) }}">
+                <button type="submit" class="sq-linkish sq-tap">{{ __('app.resend_code') }}</button>
+            </form>
             <a href="{{ route('login') }}">{{ __('app.back_to_login') }}</a>
         </div>
     </div>

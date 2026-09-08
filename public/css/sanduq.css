@@ -36,6 +36,10 @@
 body{ margin:0; background:var(--color-bg); color:var(--color-text); }
 a{ color:var(--color-accent-700); }
 a:hover{ color:var(--color-accent); }
+/* زر يبدو كرابط — لفعل يجب أن يكون POST (إعادة إرسال الرمز) لا رابطًا */
+.sq-linkish{ background:none; border:0; padding:0; font:inherit; cursor:pointer;
+  color:var(--color-accent-700); text-decoration:underline; }
+.sq-linkish:hover{ color:var(--color-accent); }
 :focus-visible{ outline:2px solid var(--color-accent); outline-offset:2px; }
 .sq-mute{ color:color-mix(in srgb,var(--color-text) 55%,transparent); }
 .sq-num{ font-family:var(--font-heading); font-variant-numeric:tabular-nums; }

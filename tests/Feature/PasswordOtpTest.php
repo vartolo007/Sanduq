@@ -68,6 +68,35 @@ class PasswordOtpTest extends TestCase {
          ->assertSessionHasErrors('code');
   }
 
+  /**
+   * زر "إرسال رمز جديد" في صفحة إدخال الرمز يجب أن يرسل رمزًا فعلًا.
+   *
+   * كان رابطًا إلى password.request — أي GET على صفحة إدخال البريد — فيعيد
+   * المستخدم خطوة إلى الوراء دون إرسال شيء، رغم أن نصّه يعده بذلك.
+   */
+  public function test_resend_from_reset_page_sends_a_new_code(): void {
+    Mail::fake(); $this->user();
+    $this->post(route('password.email'), ['email'=>'a@b.com']);
+    $first=null; Mail::assertSent(PasswordOtpMail::class, function($m) use (&$first){ $first=$m->code; return true; });
+
+    // نتحقق من النموذج لا من الرابط: password.email و password.request يتشاركان
+    // المسار /forgot-password ويختلفان في الطريقة فقط، فمقارنة الرابط وحده
+    // كانت ستمرّ على النسخة المعطوبة أيضًا.
+    $page = $this->get(route('password.reset'))->assertOk();
+    $page->assertSee('<form method="POST" action="'.route('password.email').'"', false);
+    $page->assertDontSee('<a href="'.route('password.request').'"', false);
+
+    // حاجز الدقيقة يمنع الإرسال الفوري؛ نتخطّاه لنختبر الإرسال نفسه.
+    RateLimiter::clear('pw-otp-send:a@b.com');
+
+    $this->post(route('password.email'), ['email'=>'a@b.com'])
+         ->assertRedirect(route('password.reset'))->assertSessionHas('status');
+
+    $codes=[]; Mail::assertSent(PasswordOtpMail::class, function($m) use (&$codes){ $codes[]=$m->code; return true; });
+    $this->assertCount(2, $codes, 'resend must send a second code');
+    $this->assertNotSame($first, $codes[1], 'the resent code must be a new one');
+  }
+
   public function test_unknown_email_sends_nothing_but_looks_identical(): void {
     Mail::fake();
     $this->post(route('password.email'), ['email'=>'nobody@b.com'])
